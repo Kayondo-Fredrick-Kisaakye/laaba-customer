@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Freddie'sCustomerWatch</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #0d0d0f;
+      --surface: #141418;
+      --surface2: #1c1c22;
+      --border: #2a2a35;
+      --accent: #f59e0b;
+      --accent2: #fbbf24;
+      --text: #e8e8f0;
+      --muted: #6b6b80;
+      --red: #ef4444;
+      --green: #22c55e;
+      --blue: #3b82f6;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; }
+    .logo span { color: var(--accent); }
+    .db-status {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      cursor: pointer;
+    }
+    .db-status.connected { border-color: var(--green); color: var(--green); }
+    .db-status.disconnected { border-color: var(--red); color: var(--red); }
+
+    /* ── LAYOUT ── */
+    .wrapper { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
+
+    /* ── CONFIG MODAL ── */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 999;
+      backdrop-filter: blur(4px);
+    }
+    .overlay.hidden { display: none; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 32px;
+      width: min(460px, 92vw);
+    }
+    .modal h2 { font-size: 1.25rem; font-weight: 800; margin-bottom: 8px; }
+    .modal p { color: var(--muted); font-size: 0.85rem; margin-bottom: 20px; line-height: 1.5; }
+    .modal label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; margin-top: 14px; }
+    .modal input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      padding: 10px 12px;
+      outline: none;
+    }
+    .modal input:focus { border-color: var(--accent); }
+    .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+    .btn {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: var(--accent); color: #000; }
+    .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-danger { background: var(--red); color: #fff; }
+    .btn-sm { padding: 6px 12px; font-size: 0.78rem; }
+
+    /* ── STATS ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--accent);
+    }
+
+
+    /* ── TABS ── */
+    .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+    .tab {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: none;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
+    .tab:not(.active):hover { background: var(--surface); color: var(--text); border-color: var(--border); }
+
+    /* ── SECTION ── */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-title { font-size: 1rem; font-weight: 700; }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      padding: 12px 16px;
+      text-align: left;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 13px 16px;
+      font-size: 0.88rem;
+      border-bottom: 1px solid var(--border);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface2); }
+    .empty-row { text-align: center; color: var(--muted); padding: 40px; font-size: 0.85rem; }
+
+    /* ── FORM PANEL ── */
+    .form-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .form-panel.open { display: block; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .field label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 5px; }
+    .field input, .field select, .field textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      font-size: 0.85rem;
+      padding: 9px 12px;
+      outline: none;
+    }
+    .field textarea { resize: vertical; min-height: 72px; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+    .field select option { background: var(--surface2); }
+    .form-actions { display: flex; gap: 10px; margin-top: 14px; }
+
+    /* ── BADGE ── */
+    .badge {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .badge-green { background: rgba(34,197,94,0.15); color: var(--green); }
+    .badge-amber { background: rgba(245,158,11,0.15); color: var(--accent); }
+    .badge-red { background: rgba(239,68,68,0.15); color: var(--red); }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 0.85rem;
+      z-index: 9999;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.25s;
+      max-width: 280px;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { border-color: var(--green); color: var(--green); }
+    #toast.error { border-color: var(--red); color: var(--red); }
+
+    .action-btns { display: flex; gap: 6px; }
+    .money { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+
+<!-- ── CONFIG OVERLAY ── -->
+<div class="overlay" id="configOverlay">
+  <div class="modal">
+    <h2>Connect to Supabase Database</h2>
+    <p>Paste your Supabase project URL and anon key. These are saved in your browser and never shared.</p>
+    <label>Project URL</label>
+    <input type="text" id="cfgUrl" placeholder="https://xxxx.supabase.co" />
+    <label>Anon Key</label>
+    <input type="text" id="cfgKey" placeholder="eyJ..." />
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="saveConfig()">Connect</button>
+      <button class="btn btn-ghost" onclick="closeConfig()">Use Local Mode</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="logo">Laaba<span>Customer</span> <i>Designed by Group 4</i></div>
+  <button class="db-status disconnected" id="dbStatus" onclick="openConfig()">⬤ Not connected</button>
+</header>
+
+<!-- ── MAIN ── -->
+<div class="wrapper">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Total Customers</div>
+      <div class="stat-value amber" id="statCustomers">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Visits</div>
+      <div class="stat-value blue" id="statVisits">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Sales</div>
+      <div class="stat-value green" id="statSales">UGX 0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Transactions</div>
+      <div class="stat-value" id="statTxns">0</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('customers')">Customers</button>
+    <button class="tab" onclick="switchTab('visits')">Activity / Visits</button>
+    <button class="tab" onclick="switchTab('transactions')">Transactions</button>
+  </div>
+
+  <!-- ══ CUSTOMERS ══ -->
+  <div class="section active" id="tab-customers">
+    <div class="section-header">
+      <span class="section-title">All Customers</span>
+      <button class="btn btn-primary btn-sm" onclick="toggleForm('customerForm')">+ Add Customer</button>
+    </div>
+
+    <div class="form-panel" id="customerForm">
+      <div class="form-grid">
+        <div class="field"><label>Full Name *</label><input id="c_name" placeholder="Kayondo Fredrick Kisaakye"/></div>
+        <div class="field"><label>Phone</label><input id="c_phone" placeholder="+256 750 251 439"/></div>
+        <div class="field"><label>Email</label><input id="c_email" placeholder="Hizmerk@proton.me"/></div>
+        <div class="field"><label>Location</label><input id="c_location" placeholder="Kampala"/></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary btn-sm" onclick="saveCustomer()">Save Customer</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleForm('customerForm')">Cancel</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Location</th>
+            <th>Joined</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="customerTable">
+          <tr><td colspan="7" class="empty-row">No customers yet. Add one above.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ VISITS ══ -->
+  <div class="section" id="tab-visits">
+    <div class="section-header">
+      <span class="section-title">Customer Activity</span>
+      <button class="btn btn-primary btn-sm" onclick="toggleForm('visitForm')">+ Log Visit</button>
+    </div>
+
+    <div class="form-panel" id="visitForm">
+      <div class="form-grid">
+        <div class="field">
+          <label>Customer *</label>
+          <select id="v_customer"><option value="">— select customer —</option></select>
+        </div>
+        <div class="field"><label>Date *</label><input type="date" id="v_date"/></div>
+        <div class="field"><label>Purpose</label><input id="v_purpose" placeholder="e.g. purchase, inquiry"/></div>
+        <div class="field"><label>Notes</label><input id="v_notes" placeholder="Optional notes"/></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary btn-sm" onclick="saveVisit()">Log Visit</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleForm('visitForm')">Cancel</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Customer</th>
+            <th>Date</th>
+            <th>Purpose</th>
+            <th>Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="visitTable">
+          <tr><td colspan="6" class="empty-row">No visits logged yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ TRANSACTIONS ══ -->
+  <div class="section" id="tab-transactions">
+    <div class="section-header">
+      <span class="section-title">Sales & Transactions</span>
+      <button class="btn btn-primary btn-sm" onclick="toggleForm('txnForm')">+ Add Transaction</button>
+    </div>
+
+    <div class="form-panel" id="txnForm">
+      <div class="form-grid">
+        <div class="field">
+          <label>Customer *</label>
+          <select id="t_customer"><option value="">— select customer —</option></select>
+        </div>
+        <div class="field"><label>Amount (UGX) *</label><input type="number" id="t_amount" placeholder="5000"/></div>
+        <div class="field">
+          <label>Type</label>
+          <select id="t_type">
+            <option value="sale">Sale</option>
+            <option value="refund">Refund</option>
+            <option value="payment">Payment</option>
+          </select>
+        </div>
+        <div class="field"><label>Description</label><input id="t_desc" placeholder="e.g. 3 packs of snacks"/></div>
+        <div class="field"><label>Date *</label><input type="date" id="t_date"/></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary btn-sm" onclick="saveTransaction()">Save</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleForm('txnForm')">Cancel</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Customer</th>
+            <th>Amount</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="txnTable">
+          <tr><td colspan="7" class="empty-row">No transactions yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONFIG & SUPABASE
+// ══════════════════════════════════════════
+let supabase = null;
+
+function openConfig() { document.getElementById('configOverlay').classList.remove('hidden'); }
+function closeConfig() { document.getElementById('configOverlay').classList.add('hidden'); }
+
+function saveConfig() {
+  const url = document.getElementById('cfgUrl').value.trim();
+  const key = document.getElementById('cfgKey').value.trim();
+  if (!url || !key) { toast('Please fill in both fields', 'error'); return; }
+  localStorage.setItem('sb_url', url);
+  localStorage.setItem('sb_key', key);
+  initSupabase(url, key);
+}
+
+function initSupabase(url, key) {
+  try {
+    supabase = window.supabase.createClient(url, key);
+    document.getElementById('dbStatus').textContent = '⬤ Connected';
+    document.getElementById('dbStatus').className = 'db-status connected';
+    closeConfig();
+    toast('Connected to Supabase!', 'success');
+    loadAll();
+  } catch(e) {
+    toast('Connection failed: ' + e.message, 'error');
+  }
+}
+
+// ══════════════════════════════════════════
+//  LOCAL FALLBACK STORE
+// ══════════════════════════════════════════
+let localData = {
+  customers: JSON.parse(localStorage.getItem('cw_customers') || '[]'),
+  visits: JSON.parse(localStorage.getItem('cw_visits') || '[]'),
+  transactions: JSON.parse(localStorage.getItem('cw_transactions') || '[]'),
+};
+
+function saveLocal() {
+  localStorage.setItem('cw_customers', JSON.stringify(localData.customers));
+  localStorage.setItem('cw_visits', JSON.stringify(localData.visits));
+  localStorage.setItem('cw_transactions', JSON.stringify(localData.transactions));
+}
+
+// ══════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['customers','visits','transactions'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+function toggleForm(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+// ══════════════════════════════════════════
+//  CUSTOMERS
+// ══════════════════════════════════════════
+async function saveCustomer() {
+  const name = document.getElementById('c_name').value.trim();
+  if (!name) { toast('Name is required', 'error'); return; }
+
+  const record = {
+    id: Date.now().toString(),
+    name,
+    phone: document.getElementById('c_phone').value.trim(),
+    email: document.getElementById('c_email').value.trim(),
+    location: document.getElementById('c_location').value.trim(),
+    created_at: new Date().toISOString(),
+  };
+
+  if (supabase) {
+    const { error } = await supabase.from('customers').insert([record]);
+    if (error) { toast('Error: ' + error.message, 'error'); return; }
+  } else {
+    localData.customers.push(record);
+    saveLocal();
+  }
+
+  ['c_name','c_phone','c_email','c_location'].forEach(id => document.getElementById(id).value = '');
+  toggleForm('customerForm');
+  toast('Customer added!', 'success');
+  loadCustomers();
+}
+
+async function deleteCustomer(id) {
+  if (!confirm('Delete this customer?')) return;
+  if (supabase) {
+    await supabase.from('customers').delete().eq('id', id);
+  } else {
+    localData.customers = localData.customers.filter(c => c.id !== id);
+    saveLocal();
+  }
+  toast('Customer deleted', 'success');
+  loadCustomers();
+}
+
+async function loadCustomers() {
+  let rows = [];
+  if (supabase) {
+    const { data } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
+    rows = data || [];
+  } else {
+    rows = [...localData.customers].reverse();
+  }
+
+  const tbody = document.getElementById('customerTable');
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row">No customers yet. Add one above.</td></tr>';
+  } else {
+    tbody.innerHTML = rows.map((c,i) => `
+      <tr>
+        <td style="color:var(--muted)">${i+1}</td>
+        <td><strong>${c.name}</strong></td>
+        <td class="money">${c.phone || '—'}</td>
+        <td>${c.email || '—'}</td>
+        <td>${c.location || '—'}</td>
+        <td style="color:var(--muted);font-size:0.78rem">${formatDate(c.created_at)}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn btn-danger btn-sm" onclick="deleteCustomer('${c.id}')">Delete</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // Update customer selects
+  const opts = rows.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('v_customer').innerHTML = '<option value="">— select customer —</option>' + opts;
+  document.getElementById('t_customer').innerHTML = '<option value="">— select customer —</option>' + opts;
+
+  document.getElementById('statCustomers').textContent = rows.length;
+}
+
+// ══════════════════════════════════════════
+//  VISITS
+// ══════════════════════════════════════════
+async function saveVisit() {
+  const cid = document.getElementById('v_customer').value;
+  const date = document.getElementById('v_date').value;
+  if (!cid || !date) { toast('Customer and date required', 'error'); return; }
+
+  const record = {
+    id: Date.now().toString(),
+    customer_id: cid,
+    customer_name: document.getElementById('v_customer').options[document.getElementById('v_customer').selectedIndex].text,
+    date,
+    purpose: document.getElementById('v_purpose').value.trim(),
+    notes: document.getElementById('v_notes').value.trim(),
+    created_at: new Date().toISOString(),
+  };
+
+  if (supabase) {
+    const { error } = await supabase.from('visits').insert([record]);
+    if (error) { toast('Error: ' + error.message, 'error'); return; }
+  } else {
+    localData.visits.push(record);
+    saveLocal();
+  }
+
+  ['v_purpose','v_notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('v_customer').value = '';
+  document.getElementById('v_date').value = '';
+  toggleForm('visitForm');
+  toast('Visit logged!', 'success');
+  loadVisits();
+}
+
+async function deleteVisit(id) {
+  if (!confirm('Delete this visit?')) return;
+  if (supabase) {
+    await supabase.from('visits').delete().eq('id', id);
+  } else {
+    localData.visits = localData.visits.filter(v => v.id !== id);
+    saveLocal();
+  }
+  loadVisits();
+}
+
+async function loadVisits() {
+  let rows = [];
+  if (supabase) {
+    const { data } = await supabase.from('visits').select('*').order('date', { ascending: false });
+    rows = data || [];
+  } else {
+    rows = [...localData.visits].reverse();
+  }
+
+  const tbody = document.getElementById('visitTable');
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-row">No visits logged yet.</td></tr>';
+  } else {
+    tbody.innerHTML = rows.map((v,i) => `
+      <tr>
+        <td style="color:var(--muted)">${i+1}</td>
+        <td><strong>${v.customer_name || v.customer_id}</strong></td>
+        <td class="money">${v.date}</td>
+        <td>${v.purpose ? `<span class="badge badge-amber">${v.purpose}</span>` : '—'}</td>
+        <td style="color:var(--muted);font-size:0.85rem">${v.notes || '—'}</td>
+        <td>
+          <button class="btn btn-danger btn-sm" onclick="deleteVisit('${v.id}')">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  document.getElementById('statVisits').textContent = rows.length;
+}
+
+// ══════════════════════════════════════════
+//  TRANSACTIONS
+// ══════════════════════════════════════════
+async function saveTransaction() {
+  const cid = document.getElementById('t_customer').value;
+  const amount = parseFloat(document.getElementById('t_amount').value);
+  const date = document.getElementById('t_date').value;
+  if (!cid || !amount || !date) { toast('Customer, amount, and date required', 'error'); return; }
+
+  const record = {
+    id: Date.now().toString(),
+    customer_id: cid,
+    customer_name: document.getElementById('t_customer').options[document.getElementById('t_customer').selectedIndex].text,
+    amount,
+    type: document.getElementById('t_type').value,
+    description: document.getElementById('t_desc').value.trim(),
+    date,
+    created_at: new Date().toISOString(),
+  };
+
+  if (supabase) {
+    const { error } = await supabase.from('transactions').insert([record]);
+    if (error) { toast('Error: ' + error.message, 'error'); return; }
+  } else {
+    localData.transactions.push(record);
+    saveLocal();
+  }
+
+  ['t_amount','t_desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('t_customer').value = '';
+  document.getElementById('t_date').value = '';
+  toggleForm('txnForm');
+  toast('Transaction saved!', 'success');
+  loadTransactions();
+}
+
+async function deleteTransaction(id) {
+  if (!confirm('Delete this transaction?')) return;
+  if (supabase) {
+    await supabase.from('transactions').delete().eq('id', id);
+  } else {
+    localData.transactions = localData.transactions.filter(t => t.id !== id);
+    saveLocal();
+  }
+  loadTransactions();
+}
+
+async function loadTransactions() {
+  let rows = [];
+  if (supabase) {
+    const { data } = await supabase.from('transactions').select('*').order('date', { ascending: false });
+    rows = data || [];
+  } else {
+    rows = [...localData.transactions].reverse();
+  }
+
+  const tbody = document.getElementById('txnTable');
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-row">No transactions yet.</td></tr>';
+  } else {
+    tbody.innerHTML = rows.map((t,i) => `
+      <tr>
+        <td style="color:var(--muted)">${i+1}</td>
+        <td><strong>${t.customer_name || t.customer_id}</strong></td>
+        <td class="money" style="color:${t.type==='refund'?'var(--red)':'var(--green)'}">
+          ${t.type==='refund'?'-':''}UGX ${Number(t.amount).toLocaleString()}
+        </td>
+        <td>
+          <span class="badge ${t.type==='sale'?'badge-green':t.type==='refund'?'badge-red':'badge-amber'}">
+            ${t.type}
+          </span>
+        </td>
+        <td style="color:var(--muted);font-size:0.85rem">${t.description || '—'}</td>
+        <td class="money" style="font-size:0.8rem">${t.date}</td>
+        <td>
+          <button class="btn btn-danger btn-sm" onclick="deleteTransaction('${t.id}')">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  const sales = rows.filter(t => t.type !== 'refund').reduce((s,t) => s + Number(t.amount), 0);
+  const refunds = rows.filter(t => t.type === 'refund').reduce((s,t) => s + Number(t.amount), 0);
+  const net = sales - refunds;
+  document.getElementById('statSales').textContent = 'UGX ' + net.toLocaleString();
+  document.getElementById('statTxns').textContent = rows.length;
+}
+
+// ══════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════
+function formatDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-UG', { year:'numeric', month:'short', day:'numeric' });
+}
+
+let toastTimer;
+function toast(msg, type='success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 3000);
+}
+
+async function loadAll() {
+  await loadCustomers();
+  await loadVisits();
+  await loadTransactions();
+}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  // Set today's date as default
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('v_date').value = today;
+  document.getElementById('t_date').value = today;
+
+  // Try to restore saved Supabase config
+  const url = localStorage.getItem('sb_url');
+  const key = localStorage.getItem('sb_key');
+  if (url && key) {
+    document.getElementById('cfgUrl').value = url;
+    document.getElementById('cfgKey').value = key;
+    initSupabase(url, key);
+  } else {
+    document.getElementById('configOverlay').classList.remove('hidden');
+    loadAll(); // local mode
+  }
+});
+</script>
+</body>
+</html>
