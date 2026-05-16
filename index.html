@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Freddie'sCustomerWatch</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --bg: #0d0d0f;
@@ -43,53 +42,12 @@
     }
     .logo { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; }
     .logo span { color: var(--accent); }
-    .db-status {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem;
-      padding: 4px 10px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      background: var(--surface2);
-      cursor: pointer;
-    }
-    .db-status.connected { border-color: var(--green); color: var(--green); }
-    .db-status.disconnected { border-color: var(--red); color: var(--red); }
+    .tagline { font-size: 0.8rem; color: var(--muted); font-style: italic; }
 
     /* ── LAYOUT ── */
     .wrapper { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
 
-    /* ── CONFIG MODAL ── */
-    .overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.75);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 999;
-      backdrop-filter: blur(4px);
-    }
-    .overlay.hidden { display: none; }
-    .modal {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 32px;
-      width: min(460px, 92vw);
-    }
-    .modal h2 { font-size: 1.25rem; font-weight: 800; margin-bottom: 8px; }
-    .modal p { color: var(--muted); font-size: 0.85rem; margin-bottom: 20px; line-height: 1.5; }
-    .modal label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; margin-top: 14px; }
-    .modal input {
-      width: 100%;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
-      padding: 10px 12px;
-      outline: none;
-    }
-    .modal input:focus { border-color: var(--accent); }
-    .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+    /* ── COMPONENTS & ACTIONS ── */
     .btn {
       font-family: 'Syne', sans-serif;
       font-size: 0.85rem;
@@ -126,7 +84,11 @@
       position: absolute; top: 0; left: 0; right: 0; height: 2px;
       background: var(--accent);
     }
-
+    .stat-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 1.6rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .stat-value.amber { color: var(--accent); }
+    .stat-value.blue { color: var(--blue); }
+    .stat-value.green { color: var(--green); }
 
     /* ── TABS ── */
     .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
@@ -249,32 +211,13 @@
 </head>
 <body>
 
-<!-- ── CONFIG OVERLAY ── -->
-<div class="overlay" id="configOverlay">
-  <div class="modal">
-    <h2>Connect to Supabase Database</h2>
-    <p>Paste your Supabase project URL and anon key. These are saved in your browser and never shared.</p>
-    <label>Project URL</label>
-    <input type="text" id="cfgUrl" placeholder="https://xxxx.supabase.co" />
-    <label>Anon Key</label>
-    <input type="text" id="cfgKey" placeholder="eyJ..." />
-    <div class="modal-actions">
-      <button class="btn btn-primary" onclick="saveConfig()">Connect</button>
-      <button class="btn btn-ghost" onclick="closeConfig()">Use Local Mode</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── HEADER ── -->
 <header>
-  <div class="logo">Laaba<span>Customer</span> <i>Designed by Group 4</i></div>
-  <button class="db-status disconnected" id="dbStatus" onclick="openConfig()">⬤ Not connected</button>
+  <div class="logo">Laaba<span>Customer</span></div>
+  <div class="tagline">Designed by Group 4</div>
 </header>
 
-<!-- ── MAIN ── -->
 <div class="wrapper">
 
-  <!-- Stats -->
   <div class="stats">
     <div class="stat-card">
       <div class="stat-label">Total Customers</div>
@@ -294,14 +237,12 @@
     </div>
   </div>
 
-  <!-- Tabs -->
   <div class="tabs">
     <button class="tab active" onclick="switchTab('customers')">Customers</button>
     <button class="tab" onclick="switchTab('visits')">Activity / Visits</button>
     <button class="tab" onclick="switchTab('transactions')">Transactions</button>
   </div>
 
-  <!-- ══ CUSTOMERS ══ -->
   <div class="section active" id="tab-customers">
     <div class="section-header">
       <span class="section-title">All Customers</span>
@@ -341,7 +282,6 @@
     </div>
   </div>
 
-  <!-- ══ VISITS ══ -->
   <div class="section" id="tab-visits">
     <div class="section-header">
       <span class="section-title">Customer Activity</span>
@@ -383,7 +323,6 @@
     </div>
   </div>
 
-  <!-- ══ TRANSACTIONS ══ -->
   <div class="section" id="tab-transactions">
     <div class="section-header">
       <span class="section-title">Sales & Transactions</span>
@@ -440,37 +379,7 @@
 
 <script>
 // ══════════════════════════════════════════
-//  CONFIG & SUPABASE
-// ══════════════════════════════════════════
-let supabase = null;
-
-function openConfig() { document.getElementById('configOverlay').classList.remove('hidden'); }
-function closeConfig() { document.getElementById('configOverlay').classList.add('hidden'); }
-
-function saveConfig() {
-  const url = document.getElementById('cfgUrl').value.trim();
-  const key = document.getElementById('cfgKey').value.trim();
-  if (!url || !key) { toast('Please fill in both fields', 'error'); return; }
-  localStorage.setItem('sb_url', url);
-  localStorage.setItem('sb_key', key);
-  initSupabase(url, key);
-}
-
-function initSupabase(url, key) {
-  try {
-    supabase = window.supabase.createClient(url, key);
-    document.getElementById('dbStatus').textContent = '⬤ Connected';
-    document.getElementById('dbStatus').className = 'db-status connected';
-    closeConfig();
-    toast('Connected to Supabase!', 'success');
-    loadAll();
-  } catch(e) {
-    toast('Connection failed: ' + e.message, 'error');
-  }
-}
-
-// ══════════════════════════════════════════
-//  LOCAL FALLBACK STORE
+//  LOCAL REPOSITORY & STORAGE ENGINE
 // ══════════════════════════════════════════
 let localData = {
   customers: JSON.parse(localStorage.getItem('cw_customers') || '[]'),
@@ -478,18 +387,18 @@ let localData = {
   transactions: JSON.parse(localStorage.getItem('cw_transactions') || '[]'),
 };
 
-function saveLocal() {
+function commitToLocalStorage() {
   localStorage.setItem('cw_customers', JSON.stringify(localData.customers));
   localStorage.setItem('cw_visits', JSON.stringify(localData.visits));
   localStorage.setItem('cw_transactions', JSON.stringify(localData.transactions));
 }
 
 // ══════════════════════════════════════════
-//  TABS
+//  VIEW INTERACTIVE LOGIC (TABS & UI)
 // ══════════════════════════════════════════
 function switchTab(name) {
-  document.querySelectorAll('.tab').forEach((t,i) => {
-    const names = ['customers','visits','transactions'];
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const names = ['customers', 'visits', 'transactions'];
     t.classList.toggle('active', names[i] === name);
   });
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -497,68 +406,157 @@ function switchTab(name) {
 }
 
 function toggleForm(id) {
-  const el = document.getElementById(id);
-  el.classList.toggle('open');
+  document.getElementById(id).classList.toggle('open');
+}
+
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function formatDate(dateString) {
+  if (!dateString) return '—';
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) return dateString;
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function findCustomerName(customerId) {
+  const customer = localData.customers.find(c => c.id === customerId);
+  return customer ? customer.name : 'Unknown Customer';
 }
 
 // ══════════════════════════════════════════
-//  CUSTOMERS
+//  DATA ENGINE: CUSTOMER CONTROLLERS
 // ══════════════════════════════════════════
-async function saveCustomer() {
+function saveCustomer() {
   const name = document.getElementById('c_name').value.trim();
-  if (!name) { toast('Name is required', 'error'); return; }
+  if (!name) { toast('Full Name is required', 'error'); return; }
 
   const record = {
-    id: Date.now().toString(),
-    name,
+    id: 'cust_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+    name: name,
     phone: document.getElementById('c_phone').value.trim(),
     email: document.getElementById('c_email').value.trim(),
     location: document.getElementById('c_location').value.trim(),
-    created_at: new Date().toISOString(),
+    created_at: new Date().toISOString()
   };
 
-  if (supabase) {
-    const { error } = await supabase.from('customers').insert([record]);
-    if (error) { toast('Error: ' + error.message, 'error'); return; }
-  } else {
-    localData.customers.push(record);
-    saveLocal();
-  }
+  localData.customers.push(record);
+  commitToLocalStorage();
 
-  ['c_name','c_phone','c_email','c_location'].forEach(id => document.getElementById(id).value = '');
+  ['c_name', 'c_phone', 'c_email', 'c_location'].forEach(id => document.getElementById(id).value = '');
   toggleForm('customerForm');
-  toast('Customer added!', 'success');
-  loadCustomers();
+  toast('Customer profile added successfully!');
+  renderApp();
 }
 
-async function deleteCustomer(id) {
-  if (!confirm('Delete this customer?')) return;
-  if (supabase) {
-    await supabase.from('customers').delete().eq('id', id);
-  } else {
-    localData.customers = localData.customers.filter(c => c.id !== id);
-    saveLocal();
-  }
-  toast('Customer deleted', 'success');
-  loadCustomers();
+function deleteCustomer(id) {
+  if (!confirm('Are you sure you want to delete this customer? Linked logs will remain or show as unknown.')) return;
+  localData.customers = localData.customers.filter(c => c.id !== id);
+  commitToLocalStorage();
+  toast('Customer removed from system.', 'error');
+  renderApp();
 }
 
-async function loadCustomers() {
-  let rows = [];
-  if (supabase) {
-    const { data } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
-    rows = data || [];
-  } else {
-    rows = [...localData.customers].reverse();
+// ══════════════════════════════════════════
+//  DATA ENGINE: VISITS CONTROLLERS
+// ══════════════════════════════════════════
+function saveVisit() {
+  const cid = document.getElementById('v_customer').value;
+  const date = document.getElementById('v_date').value;
+  if (!cid || !date) { toast('Please select a customer and choose a date', 'error'); return; }
+
+  const record = {
+    id: 'visit_' + Date.now(),
+    customer_id: cid,
+    date: date,
+    purpose: document.getElementById('v_purpose').value.trim(),
+    notes: document.getElementById('v_notes').value.trim()
+  };
+
+  localData.visits.push(record);
+  commitToLocalStorage();
+
+  ['v_customer', 'v_date', 'v_purpose', 'v_notes'].forEach(id => document.getElementById(id).value = '');
+  toggleForm('visitForm');
+  toast('Activity visit successfully logged!');
+  renderApp();
+}
+
+function deleteVisit(id) {
+  if (!confirm('Remove this visit entry?')) return;
+  localData.visits = localData.visits.filter(v => v.id !== id);
+  commitToLocalStorage();
+  toast('Activity log deleted', 'error');
+  renderApp();
+}
+
+// ══════════════════════════════════════════
+//  DATA ENGINE: TRANSACTION CONTROLLERS
+// ══════════════════════════════════════════
+function saveTransaction() {
+  const cid = document.getElementById('t_customer').value;
+  const amountInput = document.getElementById('t_amount').value.trim();
+  const date = document.getElementById('t_date').value;
+  
+  if (!cid || !amountInput || !date) { 
+    toast('Customer identification, amount, and date are required!', 'error'); 
+    return; 
   }
 
-  const tbody = document.getElementById('customerTable');
-  if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-row">No customers yet. Add one above.</td></tr>';
+  const record = {
+    id: 'txn_' + Date.now(),
+    customer_id: cid,
+    amount: parseFloat(amountInput),
+    type: document.getElementById('t_type').value,
+    description: document.getElementById('t_desc').value.trim(),
+    date: date
+  };
+
+  localData.transactions.push(record);
+  commitToLocalStorage();
+
+  ['t_customer', 't_amount', 't_desc', 't_date'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('t_type').value = 'sale';
+  toggleForm('txnForm');
+  toast('Financial transaction registered!');
+  renderApp();
+}
+
+function deleteTransaction(id) {
+  if (!confirm('Permanently wipe out this financial transaction entry?')) return;
+  localData.transactions = localData.transactions.filter(t => t.id !== id);
+  commitToLocalStorage();
+  toast('Transaction entry deleted.', 'error');
+  renderApp();
+}
+
+// ══════════════════════════════════════════
+//  RE-RENDERING CORE GRAPHICS ENGINE
+// ══════════════════════════════════════════
+function renderApp() {
+  // 1. Sort datasets chronologically
+  const sortedCustomers = [...localData.customers].reverse();
+  const sortedVisits = [...localData.visits].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const sortedTxns = [...localData.transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // 2. Render dropdown option components across selectors
+  const dropdownMarkup = '<option value="">— select customer —</option>' + 
+    sortedCustomers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('v_customer').innerHTML = dropdownMarkup;
+  document.getElementById('t_customer').innerHTML = dropdownMarkup;
+
+  // 3. Populate Customer Tables
+  const cTbody = document.getElementById('customerTable');
+  if (sortedCustomers.length === 0) {
+    cTbody.innerHTML = '<tr><td colspan="7" class="empty-row">No customers yet. Add one above.</td></tr>';
   } else {
-    tbody.innerHTML = rows.map((c,i) => `
+    cTbody.innerHTML = sortedCustomers.map((c, i) => `
       <tr>
-        <td style="color:var(--muted)">${i+1}</td>
+        <td style="color:var(--muted)">${i + 1}</td>
         <td><strong>${c.name}</strong></td>
         <td class="money">${c.phone || '—'}</td>
         <td>${c.email || '—'}</td>
@@ -573,221 +571,73 @@ async function loadCustomers() {
     `).join('');
   }
 
-  // Update customer selects
-  const opts = rows.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-  document.getElementById('v_customer').innerHTML = '<option value="">— select customer —</option>' + opts;
-  document.getElementById('t_customer').innerHTML = '<option value="">— select customer —</option>' + opts;
-
-  document.getElementById('statCustomers').textContent = rows.length;
-}
-
-// ══════════════════════════════════════════
-//  VISITS
-// ══════════════════════════════════════════
-async function saveVisit() {
-  const cid = document.getElementById('v_customer').value;
-  const date = document.getElementById('v_date').value;
-  if (!cid || !date) { toast('Customer and date required', 'error'); return; }
-
-  const record = {
-    id: Date.now().toString(),
-    customer_id: cid,
-    customer_name: document.getElementById('v_customer').options[document.getElementById('v_customer').selectedIndex].text,
-    date,
-    purpose: document.getElementById('v_purpose').value.trim(),
-    notes: document.getElementById('v_notes').value.trim(),
-    created_at: new Date().toISOString(),
-  };
-
-  if (supabase) {
-    const { error } = await supabase.from('visits').insert([record]);
-    if (error) { toast('Error: ' + error.message, 'error'); return; }
+  // 4. Populate Activity/Visits Tables
+  const vTbody = document.getElementById('visitTable');
+  if (sortedVisits.length === 0) {
+    vTbody.innerHTML = '<tr><td colspan="6" class="empty-row">No visits logged yet.</td></tr>';
   } else {
-    localData.visits.push(record);
-    saveLocal();
-  }
-
-  ['v_purpose','v_notes'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('v_customer').value = '';
-  document.getElementById('v_date').value = '';
-  toggleForm('visitForm');
-  toast('Visit logged!', 'success');
-  loadVisits();
-}
-
-async function deleteVisit(id) {
-  if (!confirm('Delete this visit?')) return;
-  if (supabase) {
-    await supabase.from('visits').delete().eq('id', id);
-  } else {
-    localData.visits = localData.visits.filter(v => v.id !== id);
-    saveLocal();
-  }
-  loadVisits();
-}
-
-async function loadVisits() {
-  let rows = [];
-  if (supabase) {
-    const { data } = await supabase.from('visits').select('*').order('date', { ascending: false });
-    rows = data || [];
-  } else {
-    rows = [...localData.visits].reverse();
-  }
-
-  const tbody = document.getElementById('visitTable');
-  if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-row">No visits logged yet.</td></tr>';
-  } else {
-    tbody.innerHTML = rows.map((v,i) => `
+    vTbody.innerHTML = sortedVisits.map((v, i) => `
       <tr>
-        <td style="color:var(--muted)">${i+1}</td>
-        <td><strong>${v.customer_name || v.customer_id}</strong></td>
-        <td class="money">${v.date}</td>
-        <td>${v.purpose ? `<span class="badge badge-amber">${v.purpose}</span>` : '—'}</td>
-        <td style="color:var(--muted);font-size:0.85rem">${v.notes || '—'}</td>
+        <td style="color:var(--muted)">${i + 1}</td>
+        <td><strong>${findCustomerName(v.customer_id)}</strong></td>
+        <td>${formatDate(v.date)}</td>
+        <td><span class="badge badge-amber">${v.purpose || 'general'}</span></td>
+        <td style="color:var(--muted)">${v.notes || '—'}</td>
         <td>
-          <button class="btn btn-danger btn-sm" onclick="deleteVisit('${v.id}')">Delete</button>
+          <div class="action-btns">
+            <button class="btn btn-danger btn-sm" onclick="deleteVisit('${v.id}')">Delete</button>
+          </div>
         </td>
       </tr>
     `).join('');
   }
 
-  document.getElementById('statVisits').textContent = rows.length;
-}
+  // 5. Populate Transactions Tables & Calculate Metrics
+  const tTbody = document.getElementById('txnTable');
+  let aggregateGrossRevenue = 0;
 
-// ══════════════════════════════════════════
-//  TRANSACTIONS
-// ══════════════════════════════════════════
-async function saveTransaction() {
-  const cid = document.getElementById('t_customer').value;
-  const amount = parseFloat(document.getElementById('t_amount').value);
-  const date = document.getElementById('t_date').value;
-  if (!cid || !amount || !date) { toast('Customer, amount, and date required', 'error'); return; }
-
-  const record = {
-    id: Date.now().toString(),
-    customer_id: cid,
-    customer_name: document.getElementById('t_customer').options[document.getElementById('t_customer').selectedIndex].text,
-    amount,
-    type: document.getElementById('t_type').value,
-    description: document.getElementById('t_desc').value.trim(),
-    date,
-    created_at: new Date().toISOString(),
-  };
-
-  if (supabase) {
-    const { error } = await supabase.from('transactions').insert([record]);
-    if (error) { toast('Error: ' + error.message, 'error'); return; }
+  if (sortedTxns.length === 0) {
+    tTbody.innerHTML = '<tr><td colspan="7" class="empty-row">No transactions yet.</td></tr>';
   } else {
-    localData.transactions.push(record);
-    saveLocal();
+    tTbody.innerHTML = sortedTxns.map((t, i) => {
+      let variantClass = 'badge-green';
+      if (t.type === 'refund') variantClass = 'badge-red';
+      if (t.type === 'payment') variantClass = 'badge-amber';
+
+      // Live metrics computing logic rules
+      if (t.type === 'sale' || t.type === 'payment') {
+        aggregateGrossRevenue += t.amount;
+      } else if (t.type === 'refund') {
+        aggregateGrossRevenue -= t.amount;
+      }
+
+      return `
+        <tr>
+          <td style="color:var(--muted)">${i + 1}</td>
+          <td><strong>${findCustomerName(t.customer_id)}</strong></td>
+          <td class="money"><strong>UGX ${t.amount.toLocaleString()}</strong></td>
+          <td><span class="badge ${variantClass}">${t.type.toUpperCase()}</span></td>
+          <td>${t.description || '—'}</td>
+          <td>${formatDate(t.date)}</td>
+          <td>
+            <div class="action-btns">
+              <button class="btn btn-danger btn-sm" onclick="deleteTransaction('${t.id}')">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
   }
 
-  ['t_amount','t_desc'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('t_customer').value = '';
-  document.getElementById('t_date').value = '';
-  toggleForm('txnForm');
-  toast('Transaction saved!', 'success');
-  loadTransactions();
+  // 6. Update Top Stats Cards Elements
+  document.getElementById('statCustomers').textContent = localData.customers.length;
+  document.getElementById('statVisits').textContent = localData.visits.length;
+  document.getElementById('statTxns').textContent = localData.transactions.length;
+  document.getElementById('statSales').textContent = 'UGX ' + aggregateGrossRevenue.toLocaleString();
 }
 
-async function deleteTransaction(id) {
-  if (!confirm('Delete this transaction?')) return;
-  if (supabase) {
-    await supabase.from('transactions').delete().eq('id', id);
-  } else {
-    localData.transactions = localData.transactions.filter(t => t.id !== id);
-    saveLocal();
-  }
-  loadTransactions();
-}
-
-async function loadTransactions() {
-  let rows = [];
-  if (supabase) {
-    const { data } = await supabase.from('transactions').select('*').order('date', { ascending: false });
-    rows = data || [];
-  } else {
-    rows = [...localData.transactions].reverse();
-  }
-
-  const tbody = document.getElementById('txnTable');
-  if (rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-row">No transactions yet.</td></tr>';
-  } else {
-    tbody.innerHTML = rows.map((t,i) => `
-      <tr>
-        <td style="color:var(--muted)">${i+1}</td>
-        <td><strong>${t.customer_name || t.customer_id}</strong></td>
-        <td class="money" style="color:${t.type==='refund'?'var(--red)':'var(--green)'}">
-          ${t.type==='refund'?'-':''}UGX ${Number(t.amount).toLocaleString()}
-        </td>
-        <td>
-          <span class="badge ${t.type==='sale'?'badge-green':t.type==='refund'?'badge-red':'badge-amber'}">
-            ${t.type}
-          </span>
-        </td>
-        <td style="color:var(--muted);font-size:0.85rem">${t.description || '—'}</td>
-        <td class="money" style="font-size:0.8rem">${t.date}</td>
-        <td>
-          <button class="btn btn-danger btn-sm" onclick="deleteTransaction('${t.id}')">Delete</button>
-        </td>
-      </tr>
-    `).join('');
-  }
-
-  const sales = rows.filter(t => t.type !== 'refund').reduce((s,t) => s + Number(t.amount), 0);
-  const refunds = rows.filter(t => t.type === 'refund').reduce((s,t) => s + Number(t.amount), 0);
-  const net = sales - refunds;
-  document.getElementById('statSales').textContent = 'UGX ' + net.toLocaleString();
-  document.getElementById('statTxns').textContent = rows.length;
-}
-
-// ══════════════════════════════════════════
-//  HELPERS
-// ══════════════════════════════════════════
-function formatDate(iso) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-UG', { year:'numeric', month:'short', day:'numeric' });
-}
-
-let toastTimer;
-function toast(msg, type='success') {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'show ' + type;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.className = '', 3000);
-}
-
-async function loadAll() {
-  await loadCustomers();
-  await loadVisits();
-  await loadTransactions();
-}
-
-// ══════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', () => {
-  // Set today's date as default
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('v_date').value = today;
-  document.getElementById('t_date').value = today;
-
-  // Try to restore saved Supabase config
-  const url = localStorage.getItem('sb_url');
-  const key = localStorage.getItem('sb_key');
-  if (url && key) {
-    document.getElementById('cfgUrl').value = url;
-    document.getElementById('cfgKey').value = key;
-    initSupabase(url, key);
-  } else {
-    document.getElementById('configOverlay').classList.remove('hidden');
-    loadAll(); // local mode
-  }
-});
+// Boot application setup on load configuration triggers
+window.addEventListener('DOMContentLoaded', renderApp);
 </script>
 </body>
 </html>
