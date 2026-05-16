@@ -33,26 +33,26 @@
     header {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 0 24px;
+      padding: 0 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       height: 56px;
       position: sticky; top: 0; z-index: 100;
     }
-    .logo { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px; }
+    .logo { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.5px; }
     .logo span { color: var(--accent); }
-    .tagline { font-size: 0.8rem; color: var(--muted); font-style: italic; }
+    .tagline { font-size: 0.72rem; color: var(--muted); font-style: italic; }
 
     /* ── LAYOUT ── */
-    .wrapper { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
+    .wrapper { max-width: 1100px; margin: 0 auto; padding: 16px 12px; }
 
     /* ── COMPONENTS & ACTIONS ── */
     .btn {
       font-family: 'Syne', sans-serif;
       font-size: 0.85rem;
       font-weight: 700;
-      padding: 10px 18px;
+      padding: 10px 16px;
       border-radius: 8px;
       border: none;
       cursor: pointer;
@@ -67,15 +67,18 @@
     /* ── STATS ── */
     .stats {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 14px;
-      margin-bottom: 28px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    @media (min-width: 640px) {
+      .stats { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
     }
     .stat-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 18px 20px;
+      padding: 14px 16px;
       position: relative;
       overflow: hidden;
     }
@@ -84,28 +87,39 @@
       position: absolute; top: 0; left: 0; right: 0; height: 2px;
       background: var(--accent);
     }
-    .stat-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-value { font-size: 1.6rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .stat-label { font-size: 0.7rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 1.25rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; word-break: break-all; }
+    @media (min-width: 640px) {
+      .stat-value { font-size: 1.6rem; }
+    }
     .stat-value.amber { color: var(--accent); }
     .stat-value.blue { color: var(--blue); }
     .stat-value.green { color: var(--green); }
 
     /* ── TABS ── */
-    .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+    .tabs { 
+      display: flex; 
+      gap: 4px; 
+      margin-bottom: 20px; 
+      overflow-x: auto; 
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
     .tab {
       font-family: 'Syne', sans-serif;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 700;
-      padding: 8px 18px;
+      padding: 8px 14px;
       border-radius: 8px;
       border: 1px solid transparent;
       background: none;
       color: var(--muted);
       cursor: pointer;
       transition: all 0.15s;
+      white-space: nowrap;
     }
     .tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
-    .tab:not(.active):hover { background: var(--surface); color: var(--text); border-color: var(--border); }
 
     /* ── SECTION ── */
     .section { display: none; }
@@ -117,9 +131,9 @@
       justify-content: space-between;
       margin-bottom: 16px;
     }
-    .section-title { font-size: 1rem; font-weight: 700; }
+    .section-title { font-size: 0.95rem; font-weight: 700; }
 
-    /* ── TABLE ── */
+    /* ── RESPONSIVE TABLE TO CARD SYSTEM ── */
     .table-wrap {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -147,17 +161,57 @@
     tr:hover td { background: var(--surface2); }
     .empty-row { text-align: center; color: var(--muted); padding: 40px; font-size: 0.85rem; }
 
+    /* Phone Screen Table Transform */
+    @media (max-width: 640px) {
+      table, thead, tbody, th, td, tr { display: block; }
+      thead { display: none; } /* Hide headers on mobile */
+      tr {
+        border-bottom: 1px solid var(--border);
+        padding: 16px;
+        position: relative;
+        background: var(--surface);
+      }
+      tr:last-child { border-bottom: none; }
+      td {
+        border-bottom: none;
+        padding: 4px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+        text-align: right;
+      }
+      /* Prepend descriptive labels on mobile view */
+      td::before {
+        content: attr(data-label);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.72rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        text-align: left;
+        font-weight: 500;
+        padding-right: 12px;
+      }
+      /* Overrides for specific presentation components */
+      td.empty-row { display: block; text-align: center; padding: 30px 10px; }
+      td.empty-row::before { display: none; }
+      td:last-child { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); }
+    }
+
     /* ── FORM PANEL ── */
     .form-panel {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 20px;
+      padding: 16px;
       margin-bottom: 20px;
       display: none;
     }
     .form-panel.open { display: block; }
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 640px) {
+      .form-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    }
     .field label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 5px; }
     .field input, .field select, .field textarea {
       width: 100%;
@@ -167,13 +221,11 @@
       color: var(--text);
       font-family: 'Syne', sans-serif;
       font-size: 0.85rem;
-      padding: 9px 12px;
+      padding: 10px 12px;
       outline: none;
     }
-    .field textarea { resize: vertical; min-height: 72px; }
     .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
-    .field select option { background: var(--surface2); }
-    .form-actions { display: flex; gap: 10px; margin-top: 14px; }
+    .form-actions { display: flex; gap: 10px; margin-top: 16px; }
 
     /* ── BADGE ── */
     .badge {
@@ -189,23 +241,26 @@
 
     /* ── TOAST ── */
     #toast {
-      position: fixed; bottom: 24px; right: 24px;
+      position: fixed; bottom: 16px; left: 16px; right: 16px;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 12px 18px;
-      font-size: 0.85rem;
+      padding: 12px 16px;
+      font-size: 0.82rem;
       z-index: 9999;
-      transform: translateY(80px);
+      transform: translateY(100px);
       opacity: 0;
       transition: all 0.25s;
-      max-width: 280px;
+      text-align: center;
+    }
+    @media (min-width: 640px) {
+      #toast { left: auto; right: 24px; bottom: 24px; max-width: 280px; text-align: left; }
     }
     #toast.show { transform: translateY(0); opacity: 1; }
     #toast.success { border-color: var(--green); color: var(--green); }
     #toast.error { border-color: var(--red); color: var(--red); }
 
-    .action-btns { display: flex; gap: 6px; }
+    .action-btns { display: flex; gap: 6px; justify-content: flex-end; width: 100%; }
     .money { font-family: 'JetBrains Mono', monospace; }
   </style>
 </head>
@@ -213,18 +268,18 @@
 
 <header>
   <div class="logo">Laaba<span>Customer</span></div>
-  <div class="tagline">Designed by Group 4</div>
+  <div class="tagline">Group 4</div>
 </header>
 
 <div class="wrapper">
 
   <div class="stats">
     <div class="stat-card">
-      <div class="stat-label">Total Customers</div>
+      <div class="stat-label">Customers</div>
       <div class="stat-value amber" id="statCustomers">0</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Total Visits</div>
+      <div class="stat-label">Visits</div>
       <div class="stat-value blue" id="statVisits">0</div>
     </div>
     <div class="stat-card">
@@ -232,7 +287,7 @@
       <div class="stat-value green" id="statSales">UGX 0</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Transactions</div>
+      <div class="stat-label">Txns</div>
       <div class="stat-value" id="statTxns">0</div>
     </div>
   </div>
@@ -454,7 +509,7 @@ function saveCustomer() {
 }
 
 function deleteCustomer(id) {
-  if (!confirm('Are you sure you want to delete this customer? Linked logs will remain or show as unknown.')) return;
+  if (!confirm('Are you sure you want to delete this customer?')) return;
   localData.customers = localData.customers.filter(c => c.id !== id);
   commitToLocalStorage();
   toast('Customer removed from system.', 'error');
@@ -503,7 +558,7 @@ function saveTransaction() {
   const date = document.getElementById('t_date').value;
   
   if (!cid || !amountInput || !date) { 
-    toast('Customer identification, amount, and date are required!', 'error'); 
+    toast('Customer, amount, and date are required!', 'error'); 
     return; 
   }
 
@@ -527,7 +582,7 @@ function saveTransaction() {
 }
 
 function deleteTransaction(id) {
-  if (!confirm('Permanently wipe out this financial transaction entry?')) return;
+  if (!confirm('Permanently delete this transaction entry?')) return;
   localData.transactions = localData.transactions.filter(t => t.id !== id);
   commitToLocalStorage();
   toast('Transaction entry deleted.', 'error');
@@ -538,31 +593,29 @@ function deleteTransaction(id) {
 //  RE-RENDERING CORE GRAPHICS ENGINE
 // ══════════════════════════════════════════
 function renderApp() {
-  // 1. Sort datasets chronologically
   const sortedCustomers = [...localData.customers].reverse();
-  const sortedVisits = [...localData.visits].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const sortedVisits = [...localData.visits].sort((a, b) =>new Date(b.date) - new Date(a.date));
   const sortedTxns = [...localData.transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  // 2. Render dropdown option components across selectors
   const dropdownMarkup = '<option value="">— select customer —</option>' + 
     sortedCustomers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
   document.getElementById('v_customer').innerHTML = dropdownMarkup;
   document.getElementById('t_customer').innerHTML = dropdownMarkup;
 
-  // 3. Populate Customer Tables
+  // 1. Render Customers
   const cTbody = document.getElementById('customerTable');
   if (sortedCustomers.length === 0) {
     cTbody.innerHTML = '<tr><td colspan="7" class="empty-row">No customers yet. Add one above.</td></tr>';
   } else {
     cTbody.innerHTML = sortedCustomers.map((c, i) => `
       <tr>
-        <td style="color:var(--muted)">${i + 1}</td>
-        <td><strong>${c.name}</strong></td>
-        <td class="money">${c.phone || '—'}</td>
-        <td>${c.email || '—'}</td>
-        <td>${c.location || '—'}</td>
-        <td style="color:var(--muted);font-size:0.78rem">${formatDate(c.created_at)}</td>
-        <td>
+        <td data-label="#">${i + 1}</td>
+        <td data-label="Name"><strong>${c.name}</strong></td>
+        <td data-label="Phone" class="money">${c.phone || '—'}</td>
+        <td data-label="Email">${c.email || '—'}</td>
+        <td data-label="Location">${c.location || '—'}</td>
+        <td data-label="Joined" style="color:var(--muted);font-size:0.78rem">${formatDate(c.created_at)}</td>
+        <td data-label="Action">
           <div class="action-btns">
             <button class="btn btn-danger btn-sm" onclick="deleteCustomer('${c.id}')">Delete</button>
           </div>
@@ -571,19 +624,19 @@ function renderApp() {
     `).join('');
   }
 
-  // 4. Populate Activity/Visits Tables
+  // 2. Render Visits
   const vTbody = document.getElementById('visitTable');
   if (sortedVisits.length === 0) {
     vTbody.innerHTML = '<tr><td colspan="6" class="empty-row">No visits logged yet.</td></tr>';
   } else {
     vTbody.innerHTML = sortedVisits.map((v, i) => `
       <tr>
-        <td style="color:var(--muted)">${i + 1}</td>
-        <td><strong>${findCustomerName(v.customer_id)}</strong></td>
-        <td>${formatDate(v.date)}</td>
-        <td><span class="badge badge-amber">${v.purpose || 'general'}</span></td>
-        <td style="color:var(--muted)">${v.notes || '—'}</td>
-        <td>
+        <td data-label="#">${i + 1}</td>
+        <td data-label="Customer"><strong>${findCustomerName(v.customer_id)}</strong></td>
+        <td data-label="Date">${formatDate(v.date)}</td>
+        <td data-label="Purpose"><span class="badge badge-amber">${v.purpose || 'general'}</span></td>
+        <td data-label="Notes" style="color:var(--muted)">${v.notes || '—'}</td>
+        <td data-label="Action">
           <div class="action-btns">
             <button class="btn btn-danger btn-sm" onclick="deleteVisit('${v.id}')">Delete</button>
           </div>
@@ -592,7 +645,7 @@ function renderApp() {
     `).join('');
   }
 
-  // 5. Populate Transactions Tables & Calculate Metrics
+  // 3. Render Transactions & Calculate Metrics
   const tTbody = document.getElementById('txnTable');
   let aggregateGrossRevenue = 0;
 
@@ -604,7 +657,6 @@ function renderApp() {
       if (t.type === 'refund') variantClass = 'badge-red';
       if (t.type === 'payment') variantClass = 'badge-amber';
 
-      // Live metrics computing logic rules
       if (t.type === 'sale' || t.type === 'payment') {
         aggregateGrossRevenue += t.amount;
       } else if (t.type === 'refund') {
@@ -613,13 +665,13 @@ function renderApp() {
 
       return `
         <tr>
-          <td style="color:var(--muted)">${i + 1}</td>
-          <td><strong>${findCustomerName(t.customer_id)}</strong></td>
-          <td class="money"><strong>UGX ${t.amount.toLocaleString()}</strong></td>
-          <td><span class="badge ${variantClass}">${t.type.toUpperCase()}</span></td>
-          <td>${t.description || '—'}</td>
-          <td>${formatDate(t.date)}</td>
-          <td>
+          <td data-label="#">${i + 1}</td>
+          <td data-label="Customer"><strong>${findCustomerName(t.customer_id)}</strong></td>
+          <td data-label="Amount" class="money"><strong>UGX ${t.amount.toLocaleString()}</strong></td>
+          <td data-label="Type"><span class="badge ${variantClass}">${t.type.toUpperCase()}</span></td>
+          <td data-label="Description">${t.description || '—'}</td>
+          <td data-label="Date">${formatDate(t.date)}</td>
+          <td data-label="Action">
             <div class="action-btns">
               <button class="btn btn-danger btn-sm" onclick="deleteTransaction('${t.id}')">Delete</button>
             </div>
@@ -629,14 +681,13 @@ function renderApp() {
     }).join('');
   }
 
-  // 6. Update Top Stats Cards Elements
+  // Update Counters
   document.getElementById('statCustomers').textContent = localData.customers.length;
   document.getElementById('statVisits').textContent = localData.visits.length;
   document.getElementById('statTxns').textContent = localData.transactions.length;
   document.getElementById('statSales').textContent = 'UGX ' + aggregateGrossRevenue.toLocaleString();
 }
 
-// Boot application setup on load configuration triggers
 window.addEventListener('DOMContentLoaded', renderApp);
 </script>
 </body>
